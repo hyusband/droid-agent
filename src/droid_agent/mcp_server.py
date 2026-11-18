@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import base64
 import json
-from typing import Optional
 
 from droid_agent import session as sess
 from droid_agent.actions import Actions
@@ -19,12 +18,12 @@ from droid_agent.device import DeviceOps
 from droid_agent.ui import element_summary, parse_hierarchy
 
 
-def _mk(serial: Optional[str]):
+def _mk(serial: str | None):
     adb = Adb(serial=serial)
     return adb, DeviceOps(adb), Actions(adb)
 
 
-def run(serial: Optional[str] = None) -> None:
+def run(serial: str | None = None) -> None:
     from mcp.server.fastmcp import FastMCP  # optional dep
 
     mcp = FastMCP("droid-agent")

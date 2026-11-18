@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Optional, Tuple
 
 from droid_agent.adb import Adb, AdbError
 
@@ -25,7 +24,7 @@ class DeviceState:
     foreground_package: str
     foreground_activity: str
     screen_on: bool
-    screen_size: Tuple[int, int]
+    screen_size: tuple[int, int]
     sdk: int
     model: str
 
@@ -36,7 +35,7 @@ class DeviceOps:
 
     # -- apps ------------------------------------------------------------
 
-    def launch(self, package: str, activity: Optional[str] = None) -> str:
+    def launch(self, package: str, activity: str | None = None) -> str:
         _check_pkg(package)
         if activity:
             if not _ACT_RE.match(activity):
@@ -70,14 +69,14 @@ class DeviceOps:
 
     # -- inspection --------------------------------------------------------
 
-    def screen_size(self) -> Tuple[int, int]:
+    def screen_size(self) -> tuple[int, int]:
         out = self.adb.shell("wm size")
         m = re.search(r"(\d+)x(\d+)", out)
         if not m:
             raise AdbError(f"Cannot parse screen size: {out!r}")
         return int(m.group(1)), int(m.group(2))
 
-    def foreground(self) -> Tuple[str, str]:
+    def foreground(self) -> tuple[str, str]:
         """Return (package, activity) of the current foreground app."""
         out = self.adb.shell("dumpsys activity activities")
         m = re.search(

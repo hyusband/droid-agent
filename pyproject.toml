@@ -33,10 +33,10 @@ mcp = ["mcp>=1.2.0"]
 dev = ["pytest>=7.0", "ruff>=0.4"]
 
 [project.urls]
-Homepage = "https://github.com/FEKA/droid-agent"
-Repository = "https://github.com/FEKA/droid-agent"
-Issues = "https://github.com/FEKA/droid-agent/issues"
-Changelog = "https://github.com/FEKA/droid-agent/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/hyusband/droid-agent"
+Repository = "https://github.com/hyusband/droid-agent"
+Issues = "https://github.com/hyusband/droid-agent/issues"
+Changelog = "https://github.com/hyusband/droid-agent/blob/main/CHANGELOG.md"
 
 [project.scripts]
 droid-agent = "droid_agent.cli:main"

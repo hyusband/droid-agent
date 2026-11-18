@@ -11,7 +11,6 @@ import json
 import os
 import time
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 from droid_agent.ui import Element, element_summary
 
@@ -30,7 +29,7 @@ def _session_path() -> str:
 class Session:
     device: str = ""
     dumped_at: float = 0.0
-    elements: List[dict] = field(default_factory=list)
+    elements: list[dict] = field(default_factory=list)
 
     @property
     def stale_seconds(self) -> float:
@@ -64,7 +63,7 @@ def save(session: Session) -> None:
                 pass
 
 
-def load() -> Optional[Session]:
+def load() -> Session | None:
     path = _session_path()
     if not os.path.isfile(path):
         return None
@@ -86,7 +85,7 @@ def load() -> Optional[Session]:
         return None
 
 
-def from_elements(device: str, elements: List[Element]) -> Session:
+def from_elements(device: str, elements: list[Element]) -> Session:
     return Session(
         device=device,
         dumped_at=time.time(),
@@ -94,7 +93,7 @@ def from_elements(device: str, elements: List[Element]) -> Session:
     )
 
 
-def resolve_ref(session: Optional[Session], ref: int) -> Optional[dict]:
+def resolve_ref(session: Session | None, ref: int) -> dict | None:
     if not session:
         return None
     for el in session.elements:

@@ -13,7 +13,8 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from droid_agent import cli, session as sess
+from droid_agent import cli
+from droid_agent import session as sess
 from droid_agent.actions import Actions, parse_target
 from droid_agent.adb import Adb, AdbError, find_adb
 from droid_agent.device import DeviceOps
@@ -103,7 +104,8 @@ class TestParseGarbage:
             node(text=f"r{i}", resource_id="", **{"class": "a.TextView",
                  "bounds": "[0,0][100,100]"})
             for i in range(5000))
-        xml = H + f'<hierarchy><node class="a.FrameLayout" bounds="[0,0][10,10]">{inner}</node></hierarchy>'
+        xml = (H + '<hierarchy><node class="a.FrameLayout" '
+                   f'bounds="[0,0][10,10]">{inner}</node></hierarchy>')
         t0 = time.time()
         els = parse_hierarchy(xml)
         dt = time.time() - t0
@@ -298,8 +300,10 @@ class TestSessionCorruption:
                 except Exception as e:
                     errs.append(type(e).__name__)
         ts = [threading.Thread(target=w, args=(t,)) for t in "ab"]
-        for t in ts: t.start()
-        for t in ts: t.join()
+        for t in ts:
+            t.start()
+        for t in ts:
+            t.join()
         print(f"\ntmp collision: errs={errs}")
         # not asserting — both MAY succeed serially; the point is the shared tmp name
 
@@ -611,7 +615,6 @@ class TestRender:
 
     def test_emoji_render_cp1252(self, capsys, monkeypatch):
         """dump output with emoji crashes print() on cp1252 consoles."""
-        import io
         from droid_agent.output import render_elements
         xml = H + ('<hierarchy><node text="ok \U0001f600" class="a.T" '
                    'bounds="[0,0][90,90]"/></hierarchy>')

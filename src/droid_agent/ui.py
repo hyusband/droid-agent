@@ -15,7 +15,6 @@ from __future__ import annotations
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
 
 _BOUNDS_RE = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
 
@@ -46,7 +45,7 @@ class Element:
     label: str
     resource_id: str
     class_name: str
-    bounds: Tuple[int, int, int, int]
+    bounds: tuple[int, int, int, int]
     cx: int
     cy: int
     clickable: bool
@@ -60,17 +59,17 @@ class Element:
     password: bool
     selected: bool
     depth: int
-    children: List["Element"] = field(default_factory=list)
+    children: list[Element] = field(default_factory=list)
 
 
-def _parse_bounds(raw: str) -> Tuple[int, int, int, int]:
+def _parse_bounds(raw: str) -> tuple[int, int, int, int]:
     m = _BOUNDS_RE.match(raw or "")
     if not m:
         return (0, 0, 0, 0)
     return int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))
 
 
-def _truthy(raw: Optional[str]) -> bool:
+def _truthy(raw: str | None) -> bool:
     return raw == "true"
 
 
@@ -93,7 +92,7 @@ def classify(class_name: str, clickable: bool, editable: bool,
     return "text"
 
 
-def _collect_label(el: ET.Element) -> Tuple[str, str]:
+def _collect_label(el: ET.Element) -> tuple[str, str]:
     """Best label: own text/desc, else nearest descendant's.
 
     Skips password-marked descendants — their text is a credential and
@@ -137,8 +136,8 @@ def _clean(text: str, cap: int = 200) -> str:
     return cleaned[:cap - 3] + "..." if len(cleaned) > cap else cleaned
 
 
-def _build(el: ET.Element, depth: int, ref_counter: List[int],
-           ancestor_clickable: bool) -> Optional[Element]:
+def _build(el: ET.Element, depth: int, ref_counter: list[int],
+           ancestor_clickable: bool) -> Element | None:
     b = _parse_bounds(el.get("bounds", ""))
     clickable = _truthy(el.get("clickable"))
     editable = _class_short(el.get("class", "")) == "edittext"
@@ -150,7 +149,7 @@ def _build(el: ET.Element, depth: int, ref_counter: List[int],
     keep = _is_interesting(el) and not ancestor_clickable \
         and w >= 8 and h >= 8
 
-    node: Optional[Element] = None
+    node: Element | None = None
     if keep:
         ref_counter[0] += 1
         # only pull descendant labels for tappables — a scroll container's
@@ -192,7 +191,7 @@ def _build(el: ET.Element, depth: int, ref_counter: List[int],
             depth=depth,
         )
 
-    kids: List[Element] = []
+    kids: list[Element] = []
     for child in el:
         child_el = _build(child, depth + 1, ref_counter,
                           ancestor_clickable or clickable)
@@ -211,7 +210,7 @@ def _build(el: ET.Element, depth: int, ref_counter: List[int],
 class _Container(Element):
     """Invisible layout node: carries children but no ref."""
 
-    def __init__(self, kids: List[Element]):
+    def __init__(self, kids: list[Element]):
         super().__init__(
             ref=0, kind="container", text="", desc="", label="",
             resource_id="", class_name="", bounds=(0, 0, 0, 0),
@@ -222,7 +221,7 @@ class _Container(Element):
         )
 
 
-def parse_hierarchy(xml: str) -> List[Element]:
+def parse_hierarchy(xml: str) -> list[Element]:
     """Parse uiautomator XML into the flat ref list (containers hoisted)."""
     start = xml.find("<hierarchy")
     if start < 0:
@@ -233,7 +232,7 @@ def parse_hierarchy(xml: str) -> List[Element]:
         raise ValueError(f"malformed hierarchy XML: {e}")
     try:
         refs = [0]
-        top: List[Element] = []
+        top: list[Element] = []
         for child in root:
             el = _build(child, 0, refs, False)
             if not el:
@@ -247,10 +246,10 @@ def parse_hierarchy(xml: str) -> List[Element]:
         raise ValueError("hierarchy too deep to parse (>~1000 levels)")
 
 
-def _flatten(els: List[Element]) -> List[Element]:
-    out: List[Element] = []
+def _flatten(els: list[Element]) -> list[Element]:
+    out: list[Element] = []
 
-    def walk(nodes: List[Element]):
+    def walk(nodes: list[Element]):
         for n in nodes:
             if isinstance(n, _Container):
                 walk(n.children)
@@ -282,7 +281,7 @@ def element_summary(el: Element) -> dict:
     }
 
 
-def find_by_ref(elements: List[Element], ref: int) -> Optional[Element]:
+def find_by_ref(elements: list[Element], ref: int) -> Element | None:
     for el in elements:
         if el.ref == ref:
             return el

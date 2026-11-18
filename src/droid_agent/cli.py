@@ -16,15 +16,14 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from typing import List, Optional
 
 from droid_agent import __version__
 from droid_agent import session as sess
-from droid_agent.actions import KEYCODES, Actions
+from droid_agent.actions import Actions
 from droid_agent.adb import Adb, AdbError
 from droid_agent.device import DeviceOps
 from droid_agent.output import emit, render_elements
-from droid_agent.ui import element_summary, parse_hierarchy
+from droid_agent.ui import parse_hierarchy
 
 
 def _adb(args) -> Adb:
@@ -96,7 +95,7 @@ def cmd_disconnect(args) -> int:
     return 0
 
 
-def _dump(args, adb: Optional[Adb] = None):
+def _dump(args, adb: Adb | None = None):
     adb = adb or _adb(args)
     adb.require_device()
     xml = DeviceOps(adb).dump_ui_xml()
@@ -119,7 +118,7 @@ def cmd_dump(args) -> int:
     return 0
 
 
-def _session_for(args, adb: Adb) -> Optional[sess.Session]:
+def _session_for(args, adb: Adb) -> sess.Session | None:
     s = sess.load()
     if s and s.device and adb.serial and s.device != adb.serial:
         if not args.json:
@@ -385,7 +384,7 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     # cp1252 consoles crash on emoji/unicode labels — force utf-8 out
     for stream in (sys.stdout, sys.stderr):
         try:

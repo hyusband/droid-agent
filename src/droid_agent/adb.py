@@ -11,7 +11,6 @@ import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
-from typing import List, Optional
 
 
 class AdbError(RuntimeError):
@@ -26,9 +25,9 @@ ADB_NOT_FOUND = (
 )
 
 
-def find_adb(explicit: Optional[str] = None) -> str:
+def find_adb(explicit: str | None = None) -> str:
     """Locate the adb binary: explicit path -> PATH -> SDK env vars."""
-    candidates: List[str] = []
+    candidates: list[str] = []
     if explicit:
         if not os.path.isfile(explicit):
             raise AdbError(f"--adb path does not exist: {explicit}")
@@ -61,19 +60,19 @@ class Device:
 class Adb:
     """Command runner bound to one adb binary and (optionally) one device."""
 
-    def __init__(self, serial: Optional[str] = None, adb_path: Optional[str] = None,
+    def __init__(self, serial: str | None = None, adb_path: str | None = None,
                  timeout: float = 30.0):
         self.serial = serial
         self.adb_path = find_adb(adb_path)
         self.timeout = timeout
 
-    def _base(self) -> List[str]:
+    def _base(self) -> list[str]:
         args = [self.adb_path]
         if self.serial:
             args += ["-s", self.serial]
         return args
 
-    def run(self, *args: str, timeout: Optional[float] = None) -> str:
+    def run(self, *args: str, timeout: float | None = None) -> str:
         """Run an adb command, return stdout as text. Raise AdbError on failure."""
         try:
             proc = subprocess.run(
@@ -99,10 +98,10 @@ class Adb:
                 raise AdbError(channel.strip())
         return stdout
 
-    def shell(self, cmd: str, timeout: Optional[float] = None) -> str:
+    def shell(self, cmd: str, timeout: float | None = None) -> str:
         return self.run("shell", cmd, timeout=timeout)
 
-    def exec_out(self, cmd: str, timeout: Optional[float] = None) -> bytes:
+    def exec_out(self, cmd: str, timeout: float | None = None) -> bytes:
         """Binary-safe exec-out (screenshots, file reads)."""
         proc = subprocess.run(
             self._base() + ["exec-out", cmd],
@@ -131,8 +130,8 @@ class Adb:
         """Android 11+ wireless pairing."""
         return self.run("pair", f"{host}:{port}", code).strip()
 
-    def disconnect(self, host: Optional[str] = None,
-                   port: Optional[int] = None) -> str:
+    def disconnect(self, host: str | None = None,
+                   port: int | None = None) -> str:
         if host and port:
             target = f"{host}:{port}"
         elif host:
@@ -143,9 +142,9 @@ class Adb:
 
     # -- listing -----------------------------------------------------------
 
-    def devices(self) -> List[Device]:
+    def devices(self) -> list[Device]:
         out = self.run("devices", "-l")
-        result: List[Device] = []
+        result: list[Device] = []
         attr_prefixes = ("model:", "device:", "product:",
                          "transport_id:", "usb:")
         for line in out.splitlines()[1:]:

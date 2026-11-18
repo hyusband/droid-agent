@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
-from typing import Any, List
+from typing import Any
 
 from droid_agent.ui import Element
 
@@ -21,7 +21,7 @@ def emit(payload: Any, as_json: bool) -> None:
         sys.stdout.write("\n")
 
 
-def render_elements(elements: List[Element]) -> str:
+def render_elements(elements: list[Element]) -> str:
     lines = []
     for el in elements:
         glyph = _KIND_GLYPH.get(el.kind, " ? ")

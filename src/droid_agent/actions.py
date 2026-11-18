@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from typing import List, Optional, Tuple, Union
 
 from droid_agent.adb import Adb, AdbError
 from droid_agent.session import Session, resolve_ref
@@ -23,7 +22,7 @@ _REF_RE = re.compile(r"^#?(\d+)$")
 _XY_RE = re.compile(r"^(\d+)[,\s]+(\d+)$")
 
 
-def parse_target(target: Union[int, str]) -> Tuple[str, Tuple[int, int]]:
+def parse_target(target: int | str) -> tuple[str, tuple[int, int]]:
     """'7' | '#7' | '540,1050' | '540 1050' -> ('ref'|'xy', payload)."""
     s = str(target).strip()
     m = _XY_RE.match(s)
@@ -35,8 +34,8 @@ def parse_target(target: Union[int, str]) -> Tuple[str, Tuple[int, int]]:
     raise AdbError(f"Cannot parse target: {target!r} (use a ref like 3 or x,y)")
 
 
-def _resolve(session: Optional[Session], target: Union[int, str],
-             what: str) -> Tuple[int, int]:
+def _resolve(session: Session | None, target: int | str,
+             what: str) -> tuple[int, int]:
     kind, payload = parse_target(target)
     if kind == "xy":
         return payload
@@ -63,26 +62,26 @@ class Actions:
     def __init__(self, adb: Adb):
         self.adb = adb
 
-    def tap(self, target: Union[int, str], session: Optional[Session] = None
-            ) -> Tuple[int, int]:
+    def tap(self, target: int | str, session: Session | None = None
+            ) -> tuple[int, int]:
         x, y = _resolve(session, target, "tap")
         self.adb.shell(f"input tap {x} {y}")
         return x, y
 
-    def long_press(self, target: Union[int, str], duration_ms: int = 800,
-                   session: Optional[Session] = None) -> Tuple[int, int]:
+    def long_press(self, target: int | str, duration_ms: int = 800,
+                   session: Session | None = None) -> tuple[int, int]:
         x, y = _resolve(session, target, "long-press")
         self.adb.shell(f"input swipe {x} {y} {x} {y} {duration_ms}")
         return x, y
 
     def swipe(self, x1: int, y1: int, x2: int, y2: int,
-              duration_ms: int = 300) -> Tuple[int, int, int, int]:
+              duration_ms: int = 300) -> tuple[int, int, int, int]:
         self.adb.shell(f"input swipe {x1} {y1} {x2} {y2} {duration_ms}")
         return x1, y1, x2, y2
 
-    def swipe_dir(self, direction: str, size: Tuple[int, int],
+    def swipe_dir(self, direction: str, size: tuple[int, int],
                   distance: float = 0.6, duration_ms: int = 300
-                  ) -> Tuple[int, int, int, int]:
+                  ) -> tuple[int, int, int, int]:
         w, h = size
         cx, cy = w // 2, h // 2
         dx, dy = int(w * distance / 2), int(h * distance / 2)
@@ -96,13 +95,13 @@ class Actions:
             raise AdbError(f"Unknown direction {direction!r} (up/down/left/right)")
         return self.swipe(start[0], start[1], end[0], end[1], duration_ms)
 
-    def type_text(self, text: str, clear: bool = False) -> List[str]:
+    def type_text(self, text: str, clear: bool = False) -> list[str]:
         """Type text; newlines become Enter keypresses.
 
         Returns a list of warnings (e.g. `%s` sequences the device will
         mangle — `input text` has no escape for it).
         """
-        warnings: List[str] = []
+        warnings: list[str] = []
         if "%s" in text or "%%" in text:
             warnings.append(
                 "text contains '%s' — `input text` treats it as a space "
