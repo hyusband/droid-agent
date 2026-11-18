@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-11-19
+
+### Changed
+- Demo GIF replaced with a real VHS-recorded terminal session (no simulated UI)
+- README redesigned (centered header, real POCO F5 output, fixed links)
+- CI: pinned ubuntu-24.04 for Python 3.9 coverage, trimmed macOS matrix
+  to the two latest Pythons, bash-shell CLI smoke step
+- PyPI publishing via repository secret (fallback until trusted
+  publishing is configured)
+
 ## [0.1.0] - 2026-11-19
 
 ### Added

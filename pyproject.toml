@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "droid-agent"
-version = "0.1.0"
+version = "0.1.1"
 description = "Agent-native Android control over stock adb — numbered UI refs, JSON output, MCP server. No Appium, no on-device APK."
 readme = "README.md"
 license = "MIT"
