@@ -15,6 +15,6 @@ htmlcov/
 Thumbs.db
 *.log
 
-# raw device captures (may contain personal data) — keep out of repo
+# raw device screencaps used to build the demo (may contain personal data)
 assets/src/
-
+_log.txt
