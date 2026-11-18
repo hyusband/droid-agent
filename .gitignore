@@ -17,4 +17,6 @@ Thumbs.db
 
 # raw device screencaps used to build the demo (may contain personal data)
 assets/src/
+# local tool binaries (vhs/ffmpeg/ttyd) for demo rendering
+scripts/.tools/
 _log.txt
