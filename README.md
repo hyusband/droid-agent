@@ -1,3 +1,4 @@
+<!-- mcp-name: io.github.hyusband/droid-agent -->
 <div align="center">
 
 # 🤖 droid-agent
