@@ -28,7 +28,7 @@ Design choices that might be interesting:
 - Zero deps and ~300ms startup — meant to be called 50×/session, not once.
 
 Works on real phones, emulators, Android TV/x86 — anything adb reaches.
-MIT licensed: https://github.com/FEKA/droid-agent
+MIT licensed: https://github.com/hyusband/droid-agent
 
 Happy to answer questions; especially curious what element-detection edge
 cases break for you.
