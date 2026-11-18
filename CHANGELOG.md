@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-11-18
+
+### Added
+- MCP server grew from 12 to 29 tools: `find`, `tap_text`, `type_into`,
+  `wait_for`, `scroll_until` (compound agent workflows), `long_press`,
+  `swipe_xy`, `shell`, `logcat`, `list_packages`, `install`, `uninstall`,
+  `clear_data`, `is_installed`, `push_file`, `pull_file`, `connect`,
+  `disconnect`
+- `screenshot` now returns a real MCP image content block (rendered by
+  clients) instead of base64 text
+- `android_task` MCP prompt describing the dump → act → verify loop
+- `ui.find_elements` — substring/exact text search with kind/clickable/
+  editable filters
+
+### Fixed
+- `mcp` extra pinned `<2` — mcp SDK 2.x renamed `FastMCP` and broke the
+  server import
+
 ## [0.1.2] - 2026-11-19
 
 ### Added

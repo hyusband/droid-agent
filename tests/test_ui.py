@@ -1,6 +1,6 @@
 import os
 
-from droid_agent.ui import find_by_ref, parse_hierarchy
+from droid_agent.ui import find_by_ref, find_elements, parse_hierarchy
 
 FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "login_dump.xml")
 
@@ -73,3 +73,41 @@ def test_centers_computed():
     els = _elements()
     btn = find_by_ref(els, 5)
     assert (btn.cx, btn.cy) == (540, 1050)
+
+
+def test_find_by_text_substring():
+    els = _elements()
+    hits = find_elements(els, text="activ")
+    assert [e.ref for e in hits] == [5]
+
+
+def test_find_case_insensitive():
+    els = _elements()
+    hits = find_elements(els, text="ACTIVAR")
+    assert [e.ref for e in hits] == [5]
+
+
+def test_find_exact_match():
+    els = _elements()
+    assert find_elements(els, text="activ", exact=True) == []
+    assert [e.ref for e in find_elements(els, text="ACTIVAR", exact=True)] == [5]
+
+
+def test_find_with_filters():
+    els = _elements()
+    inputs = find_elements(els, editable=True)
+    assert sorted(e.ref for e in inputs) == [3, 4]
+    assert [e.ref for e in find_elements(els, text="clave", kind="input")] == [3]
+
+
+def test_find_no_match():
+    els = _elements()
+    assert find_elements(els, text="nonexistent") == []
+
+
+def test_find_never_matches_password_text():
+    # password fields get text/desc scrubbed at parse time — searching the
+    # field's real content-desc ("PIN") must not match it
+    els = _elements()
+    assert find_elements(els, text="PIN") == []
+    assert [e.ref for e in find_elements(els, text="••••")] == [4]

@@ -286,3 +286,37 @@ def find_by_ref(elements: list[Element], ref: int) -> Element | None:
         if el.ref == ref:
             return el
     return None
+
+
+def find_elements(
+    elements: list[Element],
+    text: str | None = None,
+    kind: str | None = None,
+    clickable: bool | None = None,
+    editable: bool | None = None,
+    exact: bool = False,
+) -> list[Element]:
+    """Filter the flat ref list — substring (or exact) match on
+    label/text/desc plus optional kind/clickable/editable filters.
+
+    Lets agents query the UI tree ("the button that says 'Allow'")
+    without parsing a full dump, which is the dominant workflow.
+    """
+    needle = text.lower() if text else None
+
+    def matches_text(el: Element) -> bool:
+        if needle is None:
+            return True
+        fields = (el.label, el.text, el.desc)
+        if exact:
+            return any(f.lower() == needle for f in fields if f)
+        return any(needle in f.lower() for f in fields if f)
+
+    return [
+        el
+        for el in elements
+        if matches_text(el)
+        and (kind is None or el.kind == kind)
+        and (clickable is None or el.clickable == clickable)
+        and (editable is None or el.editable == editable)
+    ]

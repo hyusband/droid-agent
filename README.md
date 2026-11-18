@@ -88,8 +88,16 @@ For agents, everything is one flag away from JSON: `droid-agent --json dump`.
 }
 ```
 
-Tools exposed: `devices`, `dump_ui`, `tap`, `tap_xy`, `type_text`, `swipe`,
-`key`, `open_app`, `close_app`, `device_state`, `screenshot`, `wait`.
+29 tools exposed — the primitives (`tap`, `swipe`, `key`, `dump_ui`, `shell`)
+plus compound workflows that save agent round-trips: `tap_text` ("tap the
+Allow button" in one call), `type_into` (tap field + type), `wait_for` /
+`scroll_until` (dynamic waits), `find` (query the UI tree), `screenshot`
+(real image content for vision), `logcat`, `install`/`uninstall`, and file
+`push`/`pull`. A built-in `android_task` prompt teaches any agent the
+dump → act → verify loop.
+
+Also listed in the [official MCP Registry](https://registry.modelcontextprotocol.io/)
+as `io.github.hyusband/droid-agent`.
 
 ## Commands
 
