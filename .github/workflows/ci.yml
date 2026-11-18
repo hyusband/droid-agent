@@ -12,7 +12,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-latest]
+        # Tag runs skip macOS: its runner queue gets cancelled often enough
+        # to block releases; the same commit is covered on main pushes.
+        os: ${{ github.ref_type == 'tag' && fromJSON('["ubuntu-24.04", "windows-latest"]') || fromJSON('["ubuntu-24.04", "windows-latest", "macos-latest"]') }}
         python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         # macOS runners are 10x-cost + queue-starved: latest 2 Pythons only
         exclude:
@@ -84,6 +86,8 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+          # Re-running a tag must not fail: dist files may already exist.
+          skip-existing: true
 
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
@@ -108,6 +112,9 @@ jobs:
           jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > server.tmp && mv server.tmp server.json
 
       - name: Publish to MCP Registry
+        # Registry is in preview + republishing an existing version errors;
+        # never let it block a PyPI release.
+        continue-on-error: true
         run: |
           ./mcp-publisher login github-oidc
           ./mcp-publisher publish
