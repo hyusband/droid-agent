@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-24.04, windows-latest, macos-latest]
         python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
@@ -31,9 +31,10 @@ jobs:
         run: python -m pytest -q
 
       - name: CLI smoke
+        shell: bash
         run: |
           droid-agent --version
-          droid-agent --help > /dev/null 2>&1 || droid-agent --help > NUL
+          droid-agent --help > /dev/null
 
   build:
     runs-on: ubuntu-latest
