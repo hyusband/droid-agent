@@ -1,0 +1,43 @@
+name: Bug report
+description: Something broke or misbehaved
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: droid-agent version
+      description: output of `droid-agent --version`
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device / Android version
+      placeholder: "Pixel 7 / Android 14 · or emulator-5554"
+  - type: textarea
+    id: command
+    attributes:
+      label: Command you ran
+      placeholder: "droid-agent dump --json"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened?
+      description: Paste the full output / traceback
+    validations:
+      required: true
+  - type: textarea
+    id: dump
+    attributes:
+      label: dump --json + screenshot
+      description: For element-detection bugs, attach `droid-agent dump --json` output and a `droid-agent screenshot` PNG
+      render: json

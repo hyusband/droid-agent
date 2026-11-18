@@ -1,0 +1,23 @@
+name: Feature request
+description: A command, flag, or integration you want
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The workflow, not the solution — what task can't your agent (or you) complete today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed interface
+      description: What would the command / flag / MCP tool look like?
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints check
+      options:
+        - label: This keeps zero runtime dependencies (stdlib only)
+        - label: This needs no on-device install (adb only)
