@@ -132,7 +132,7 @@ missing ref tells you to re-dump instead of tapping blind.
 
 **Does it need root?** No — just USB/wireless debugging enabled.
 
-**iOS?** No. Use [`iphone-cli`](https://github.com/iphone-cli) — this one is
+**iOS?** No. Use [`iphone-cli`](https://github.com/HyunSeob/iphone-cli) — this one is
 Android-only by design.
 
 **Passwords?** Elements flagged `password="true"` are masked in dumps and
