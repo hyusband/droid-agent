@@ -303,6 +303,39 @@ def element_summary(el: Element) -> dict:
     }
 
 
+def extract_text(xml: str, cap: int = 100) -> list[dict]:
+    """Every visible text/desc on screen — for agents that read, not tap.
+
+    dump_ui filters to *actionable* elements; this walks the raw XML and
+    collects every non-empty text/content-desc (sanitized, passwords
+    skipped, capped) so an agent can read a screen without acting on it.
+    """
+    start = xml.find("<hierarchy")
+    if start < 0:
+        raise ValueError("no <hierarchy> in dump")
+    try:
+        root = ET.fromstring(xml[start:])
+    except ET.ParseError as e:
+        raise ValueError(f"malformed hierarchy XML: {e}")
+    out: list[dict] = []
+    for node in root.iter("node"):
+        if _truthy(node.get("password")):
+            continue
+        text = _clean(node.get("text", ""))
+        desc = _clean(node.get("content-desc", ""))
+        if not text and not desc:
+            continue
+        out.append({
+            "text": text,
+            "desc": desc,
+            "class": _class_short(node.get("class", "")),
+            "bounds": list(_parse_bounds(node.get("bounds", ""))),
+        })
+        if len(out) >= cap:
+            break
+    return out
+
+
 def find_by_ref(elements: list[Element], ref: int) -> Element | None:
     for el in elements:
         if el.ref == ref:

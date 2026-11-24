@@ -5,7 +5,9 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from droid_agent.actions import escape_input_text
 from droid_agent.adb import Adb, AdbError
+from droid_agent.events import emit
 
 # package names are interpolated into `adb shell` strings — strict allowlist
 _PKG_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)*$")
@@ -41,27 +43,38 @@ class DeviceOps:
             if not _ACT_RE.match(activity):
                 raise AdbError(f"not a valid activity name: {activity!r}")
             comp = activity if "/" in activity else f"{package}/{activity}"
-            return self.adb.shell(f"am start -n {comp}").strip()
-        out = self.adb.shell(
-            f"monkey -p {package} -c android.intent.category.LAUNCHER 1"
-        ).strip()
-        if "No activities found" in out:
-            raise AdbError(f"Package not installed or no launcher activity: {package}")
+            out = self.adb.shell(f"am start -n {comp}").strip()
+        else:
+            out = self.adb.shell(
+                f"monkey -p {package} -c android.intent.category.LAUNCHER 1"
+            ).strip()
+            if "No activities found" in out:
+                raise AdbError(
+                    f"Package not installed or no launcher activity: {package}")
+        emit("launch", package=package)
         return out
 
     def force_stop(self, package: str) -> str:
-        return self.adb.shell(f"am force-stop {_check_pkg(package)}").strip() or "ok"
+        out = self.adb.shell(f"am force-stop {_check_pkg(package)}").strip() or "ok"
+        emit("stop", package=package)
+        return out
 
     def clear(self, package: str) -> str:
-        return self.adb.shell(f"pm clear {_check_pkg(package)}").strip()
+        out = self.adb.shell(f"pm clear {_check_pkg(package)}").strip()
+        emit("clear", package=package)
+        return out
 
     def install(self, apk_path: str, reinstall: bool = False) -> str:
         # argv path, no shell interpolation — spaces are safe
         args = ["install"] + (["-r"] if reinstall else []) + [apk_path]
-        return self.adb.run(*args).strip()
+        out = self.adb.run(*args).strip()
+        emit("install", apk=apk_path)
+        return out
 
     def uninstall(self, package: str) -> str:
-        return self.adb.run("uninstall", _check_pkg(package)).strip()
+        out = self.adb.run("uninstall", _check_pkg(package)).strip()
+        emit("uninstall", package=package)
+        return out
 
     def is_installed(self, package: str) -> bool:
         out = self.adb.shell(f"pm list packages {_check_pkg(package)}")
@@ -108,6 +121,22 @@ class DeviceOps:
             model=model,
         )
 
+    def unlock(self, pin: str | None = None) -> str:
+        """Wake the screen and swipe the lockscreen away (best-effort).
+
+        With `pin`, types it and presses Enter — covers PIN secure
+        lockscreens. Pattern/fingerprint locks can't be typed past.
+        """
+        self.adb.shell("input keyevent 224")  # KEYCODE_WAKEUP
+        w, h = self.screen_size()
+        self.adb.shell(
+            f"input swipe {w // 2} {int(h * 0.85)} {w // 2} {int(h * 0.15)} 200")
+        if pin:
+            self.adb.shell(f'input text "{escape_input_text(pin)}"')
+            self.adb.shell("input keyevent 66")  # ENTER
+        emit("unlock")
+        return "ok"
+
     # -- media ------------------------------------------------------------
 
     def screenshot(self) -> bytes:
@@ -115,6 +144,7 @@ class DeviceOps:
         png = self.adb.exec_out("screencap -p")
         if not png.startswith(b"\x89PNG"):
             raise AdbError("screencap did not return a PNG")
+        emit("screenshot")
         return png
 
     def dump_ui_xml(self) -> str:

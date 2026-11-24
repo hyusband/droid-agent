@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-11-24
 
 ### Added
+- `droid-agent watch` — live browser mirror of the device *plus* the
+  agent's actions: h264 video from the device's own hardware encoder
+  (stock `screenrecord`, streamed over plain HTTP and decoded in-page by
+  vendored jmuxer/MSE at ~30fps), automatic MJPEG `screencap` fallback;
+  tap ripples, swipe arrows, action ticker and `narrate` callouts drawn
+  on top. Binds `127.0.0.1` by default (`--host`, `--port`, `--mjpeg`,
+  `--no-open`)
+- `~/.droid-agent/events.jsonl` — every semantic action (CLI and MCP)
+  appends one JSON line; the watch page tails it over SSE. Typed text is
+  logged as a char count only — never the content
+- New tools/commands: `narrate` (agent speaks a line to the watcher),
+  `read_screen` / `droid-agent read` (every visible text node — `dump_ui`
+  only lists actionable elements), `unlock` / `droid-agent unlock --pin`
+  (wake + dismiss lockscreen)
 - Prompt-injection hardening for the MCP server, three tiers:
   `droid-agent mcp --safe` hides destructive tools (`shell`, `install`,
   `uninstall`, `clear_data`, `push`/`pull_file`, `connect`/`disconnect`),

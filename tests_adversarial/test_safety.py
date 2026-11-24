@@ -88,10 +88,11 @@ class TestInjectionScrub:
 # ---------------------------------------------------------------------------
 
 _OBSERVE = {"devices", "dump_ui", "find", "device_state", "logcat",
-            "list_packages", "is_installed", "wait_for", "screenshot"}
+            "list_packages", "is_installed", "wait_for", "screenshot",
+            "read_screen", "narrate"}
 _INTERACT = {"tap", "tap_xy", "tap_text", "long_press", "type_text",
              "type_into", "swipe", "swipe_xy", "scroll_until", "key",
-             "wait", "open_app", "close_app"}
+             "wait", "open_app", "close_app", "unlock"}
 _DESTRUCT = {"clear_data", "install", "uninstall", "push_file", "pull_file",
              "connect", "disconnect", "shell"}
 _ALL = _OBSERVE | _INTERACT | _DESTRUCT

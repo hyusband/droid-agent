@@ -9,6 +9,7 @@
     droid-agent screenshot shot.png
     droid-agent open com.whatsapp
     droid-agent mcp             # stdio MCP server (needs [mcp] extra)
+    droid-agent watch           # live browser mirror + agent action feed
 """
 
 from __future__ import annotations
@@ -22,8 +23,9 @@ from droid_agent import session as sess
 from droid_agent.actions import Actions
 from droid_agent.adb import Adb, AdbError
 from droid_agent.device import DeviceOps
+from droid_agent.events import emit as log_event
 from droid_agent.output import emit, render_elements
-from droid_agent.ui import parse_hierarchy
+from droid_agent.ui import extract_text, parse_hierarchy
 
 
 def _adb(args) -> Adb:
@@ -110,6 +112,7 @@ def _dump(args, adb: Adb | None = None):
 
 def cmd_dump(args) -> int:
     elements, session = _dump(args)
+    log_event("dump")
     if args.json:
         emit(session.elements, True)
         return 0
@@ -297,8 +300,42 @@ def cmd_shell(args) -> int:
         return _err("usage: droid-agent shell <command>", args)
     adb = _adb(args)
     adb.require_device()
-    print(adb.shell(" ".join(args.cmd)), end="")
+    cmd = " ".join(args.cmd)
+    log_event("shell", cmd=cmd[:120])
+    print(adb.shell(cmd), end="")
     return 0
+
+
+def cmd_read(args) -> int:
+    adb = _adb(args)
+    adb.require_device()
+    nodes = extract_text(DeviceOps(adb).dump_ui_xml())
+    log_event("read")
+    if args.json:
+        emit(nodes, True)
+        return 0
+    for n in nodes:
+        label = n["text"] or n["desc"] or f"<{n['class']}>"
+        print(label)
+    print(f"\n{len(nodes)} text nodes")
+    return 0
+
+
+def cmd_unlock(args) -> int:
+    adb = _adb(args)
+    adb.require_device()
+    DeviceOps(adb).unlock(args.pin)
+    if args.json:
+        emit({"action": "unlock"}, True)
+    else:
+        print("unlocked")
+    return 0
+
+
+def cmd_watch(args) -> int:
+    from droid_agent.watch import serve
+    return serve(serial=args.serial, port=args.port, host=args.host,
+                 force_mjpeg=args.mjpeg, open_browser=not args.no_open)
 
 
 def cmd_mcp(args) -> int:
@@ -381,6 +418,19 @@ def build_parser() -> argparse.ArgumentParser:
     c = sub_("screenshot", cmd_screenshot, help="save a PNG screenshot")
     c.add_argument("output", nargs="?")
     sub_("state", cmd_state, help="foreground app, screen, device info")
+    sub_("read", cmd_read, help="read every visible text on screen")
+    c = sub_("unlock", cmd_unlock, help="wake + dismiss lockscreen")
+    c.add_argument("--pin", help="type PIN on secure lockscreens")
+    c = sub_("watch", cmd_watch,
+             help="live browser mirror of the device + agent actions")
+    c.add_argument("--port", type=int, default=8765)
+    c.add_argument("--host", default="127.0.0.1",
+                   help="bind address (default localhost — the page shows "
+                        "the live screen; don't expose it)")
+    c.add_argument("--mjpeg", action="store_true",
+                   help="force screencap polling instead of h264")
+    c.add_argument("--no-open", action="store_true",
+                   help="don't open the browser")
     c = sub_("shell", cmd_shell, help="raw adb shell escape hatch")
     c.add_argument("cmd", nargs=argparse.REMAINDER)
     c = sub_("mcp", cmd_mcp, help="run the stdio MCP server (droid-agent[mcp])")

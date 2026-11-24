@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 from droid_agent.adb import Adb, AdbError
+from droid_agent.events import emit
 from droid_agent.session import Session, resolve_ref
 
 # Android keyevent codes for the common keys agents need.
@@ -34,11 +35,26 @@ def parse_target(target: int | str) -> tuple[str, tuple[int, int]]:
     raise AdbError(f"Cannot parse target: {target!r} (use a ref like 3 or x,y)")
 
 
+def escape_input_text(text: str) -> str:
+    """Escape a line for `adb shell input text "…"`.
+
+    Inside the quoted arg only `"` `$` `\\` and backtick need escaping;
+    spaces must become `%s`.
+    """
+    return (
+        text.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("$", "\\$")
+        .replace("`", "\\`")
+        .replace(" ", "%s")
+    )
+
+
 def _resolve(session: Session | None, target: int | str,
-             what: str) -> tuple[int, int]:
+             what: str) -> tuple[int, int, str]:
     kind, payload = parse_target(target)
     if kind == "xy":
-        return payload
+        return payload[0], payload[1], f"{payload[0]},{payload[1]}"
     ref = payload[0]
     el = resolve_ref(session, ref)
     if not el or "center" not in el:
@@ -53,9 +69,9 @@ def _resolve(session: Session | None, target: int | str,
             f"Element #{ref} has no usable coordinates — the stored dump "
             f"is corrupt. Run `droid-agent dump` again."
         )
-    label = el.get("label") or el.get("kind") or ""
-    _ = what, label  # kept for logging hooks
-    return cx, cy
+    label = el.get("label") or el.get("kind") or f"#{ref}"
+    _ = what  # kept for logging hooks
+    return cx, cy, label
 
 
 class Actions:
@@ -64,19 +80,22 @@ class Actions:
 
     def tap(self, target: int | str, session: Session | None = None
             ) -> tuple[int, int]:
-        x, y = _resolve(session, target, "tap")
+        x, y, label = _resolve(session, target, "tap")
         self.adb.shell(f"input tap {x} {y}")
+        emit("tap", x=x, y=y, label=label)
         return x, y
 
     def long_press(self, target: int | str, duration_ms: int = 800,
                    session: Session | None = None) -> tuple[int, int]:
-        x, y = _resolve(session, target, "long-press")
+        x, y, label = _resolve(session, target, "long-press")
         self.adb.shell(f"input swipe {x} {y} {x} {y} {duration_ms}")
+        emit("long_press", x=x, y=y, ms=duration_ms, label=label)
         return x, y
 
     def swipe(self, x1: int, y1: int, x2: int, y2: int,
               duration_ms: int = 300) -> tuple[int, int, int, int]:
         self.adb.shell(f"input swipe {x1} {y1} {x2} {y2} {duration_ms}")
+        emit("swipe", x1=x1, y1=y1, x2=x2, y2=y2, ms=duration_ms)
         return x1, y1, x2, y2
 
     def swipe_dir(self, direction: str, size: tuple[int, int],
@@ -116,15 +135,9 @@ class Actions:
                 self.adb.shell("input keyevent 66")  # ENTER
             if not line:
                 continue
-            # inside the quoted arg only `"` `$` `\` backtick need escaping
-            escaped = (
-                line.replace("\\", "\\\\")
-                .replace('"', '\\"')
-                .replace("$", "\\$")
-                .replace("`", "\\`")
-                .replace(" ", "%s")
-            )
-            self.adb.shell(f'input text "{escaped}"')
+            self.adb.shell(f'input text "{escape_input_text(line)}"')
+        # never log the content — it may be a credential
+        emit("type", chars=len(text))
         return warnings
 
     def key(self, name: str) -> int:
@@ -139,6 +152,7 @@ class Actions:
                     f"Unknown key {name!r}. Known: {', '.join(sorted(KEYCODES))}"
                 )
         self.adb.shell(f"input keyevent {code}")
+        emit("key", name=name.lower(), code=code)
         return code
 
     def wait(self, seconds: float) -> None:

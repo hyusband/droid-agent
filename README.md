@@ -89,10 +89,12 @@ For agents, everything is one flag away from JSON: `droid-agent --json dump`.
 }
 ```
 
-29 tools exposed — the primitives (`tap`, `swipe`, `key`, `dump_ui`, `shell`)
+33 tools exposed — the primitives (`tap`, `swipe`, `key`, `dump_ui`, `shell`)
 plus compound workflows that save agent round-trips: `tap_text` ("tap the
 Allow button" in one call), `type_into` (tap field + type), `wait_for` /
-`scroll_until` (dynamic waits), `find` (query the UI tree), `screenshot`
+`scroll_until` (dynamic waits), `find` (query the UI tree), `read_screen`
+(read every visible text), `unlock` (wake + dismiss lockscreens),
+`narrate` (talk to whoever runs `droid-agent watch`), `screenshot`
 (real image content for vision), `logcat`, `install`/`uninstall`, and file
 `push`/`pull`. A built-in `android_task` prompt teaches any agent the
 dump → act → verify loop.
@@ -114,8 +116,33 @@ destructive tool subset — see [Security](#security).
 | `key back\|home\|enter\|tab\|del\|power…` | keyevents by name |
 | `open` / `close` / `install` / `uninstall` | app lifecycle |
 | `screenshot` / `state` | PNG capture · foreground app + screen info |
+| `read` | every visible text node on screen |
+| `unlock` | wake screen + dismiss lockscreen (`--pin` for secure locks) |
+| `watch` | live browser mirror: video + agent action overlay |
 | `shell <cmd>` | raw adb escape hatch |
 | `mcp` | stdio MCP server |
+
+## Watch the agent live
+
+```text
+droid-agent watch        # → http://127.0.0.1:8765
+```
+
+A live browser mirror of the phone — the device's own hardware h264
+encoder (`screenrecord`, stock since Android 4.4) streamed into the page
+at ~30fps and decoded by vendored jmuxer/MSE, with automatic MJPEG
+`screencap` fallback when a device won't cooperate. Still zero install —
+on the device or in Python.
+
+Every action the agent takes is drawn on top in real time — tap ripples,
+swipe arrows, an action ticker, screenshot flashes — fed by
+`~/.droid-agent/events.jsonl`, which every CLI and MCP action appends to.
+Agents can call the `narrate` tool to speak a one-liner to the viewer
+("Looking for the login button").
+
+Flags: `--port`, `--host` (binds localhost by default — the page shows
+your live screen; don't expose it), `--mjpeg` (force the fallback),
+`--no-open`.
 
 ## How it compares
 
@@ -158,6 +185,8 @@ Built-in mitigations:
   `--readonly` registers observe-only tools; `--confirm` gates destructive
   ops behind a one-time code printed to stderr
   (env: `DROID_AGENT_SAFE`, `DROID_AGENT_READONLY`, `DROID_AGENT_CONFIRM`)
+- **Typed text is never logged** — the `watch` event feed records a char
+  count + target label, not content; and the page binds `127.0.0.1` only
 
 Independent scans: [Glama](https://glama.ai/mcp/servers/hyusband/droid-agent) ·
 [m8ven](https://m8ven.ai/mcp/hyusband/droid-agent) ·

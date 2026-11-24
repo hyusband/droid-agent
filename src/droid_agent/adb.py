@@ -116,15 +116,24 @@ class Adb:
         return proc.stdout
 
     def push(self, local: str, remote: str) -> str:
-        return self.run("push", local, remote)
+        out = self.run("push", local, remote)
+        from droid_agent.events import emit
+        emit("push", remote=remote)
+        return out
 
     def pull(self, remote: str, local: str) -> str:
-        return self.run("pull", remote, local)
+        out = self.run("pull", remote, local)
+        from droid_agent.events import emit
+        emit("pull", remote=remote)
+        return out
 
     # -- connectivity ----------------------------------------------------
 
     def connect(self, host: str, port: int = 5555) -> str:
-        return self.run("connect", f"{host}:{port}").strip()
+        out = self.run("connect", f"{host}:{port}").strip()
+        from droid_agent.events import emit
+        emit("connect", target=f"{host}:{port}")
+        return out
 
     def pair(self, host: str, port: int, code: str) -> str:
         """Android 11+ wireless pairing."""
@@ -138,7 +147,10 @@ class Adb:
             target = host
         else:
             target = ""
-        return self.run("disconnect", *([target] if target else [])).strip()
+        out = self.run("disconnect", *([target] if target else [])).strip()
+        from droid_agent.events import emit
+        emit("disconnect", target=target or "all")
+        return out
 
     # -- listing -----------------------------------------------------------
 
