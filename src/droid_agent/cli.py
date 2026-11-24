@@ -304,7 +304,10 @@ def cmd_shell(args) -> int:
 def cmd_mcp(args) -> int:
     try:
         from droid_agent.mcp_server import run
-        run(serial=args.serial)
+        run(serial=args.serial,
+            safe=args.safe or None,
+            readonly=args.readonly or None,
+            confirm=args.confirm or None)
     except ImportError:
         return _err("MCP support not installed: pip install 'droid-agent[mcp]'", args)
     return 0
@@ -380,7 +383,13 @@ def build_parser() -> argparse.ArgumentParser:
     sub_("state", cmd_state, help="foreground app, screen, device info")
     c = sub_("shell", cmd_shell, help="raw adb shell escape hatch")
     c.add_argument("cmd", nargs=argparse.REMAINDER)
-    sub_("mcp", cmd_mcp, help="run the stdio MCP server (droid-agent[mcp])")
+    c = sub_("mcp", cmd_mcp, help="run the stdio MCP server (droid-agent[mcp])")
+    c.add_argument("--safe", action="store_true",
+                   help="hide destructive tools (shell/install/push/connect)")
+    c.add_argument("--readonly", action="store_true",
+                   help="observe-only tools (dump/find/logcat/screenshot)")
+    c.add_argument("--confirm", action="store_true",
+                   help="destructive ops need the code printed on stderr")
     return p
 
 

@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-11-24
+
+### Added
+- Prompt-injection hardening for the MCP server, three tiers:
+  `droid-agent mcp --safe` hides destructive tools (`shell`, `install`,
+  `uninstall`, `clear_data`, `push`/`pull_file`, `connect`/`disconnect`),
+  `--readonly` registers observe-only tools, `--confirm` gates destructive
+  ops behind a one-time code printed to stderr (env vars:
+  `DROID_AGENT_SAFE`, `DROID_AGENT_READONLY`, `DROID_AGENT_CONFIRM`)
+- `shell`/`install`/`uninstall`/`clear_data`/`push_file`/`pull_file`/
+  `connect`/`disconnect` accept a `code` argument for the `--confirm` gate
+- Invisible-Unicode sanitization in UI dumps: zero-width, bidi-override/
+  isolate and tag characters are stripped from labels, text and desc —
+  a malicious app can no longer hide instructions that are invisible on
+  screen but readable by the agent
+- `android_task` prompt now warns that screen/log text is data, not
+  instructions; same note in `dump_ui`/`find`/`logcat`/`shell`/`screenshot`
+  tool descriptions
+- SECURITY.md documenting the threat model and the mitigation flags
+
+### Fixed
+- `__init__.__version__` was stuck at 0.1.0 — now tracks pyproject
+
 ## [0.2.0] - 2026-11-18
 
 ### Added

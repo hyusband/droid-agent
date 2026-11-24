@@ -13,6 +13,7 @@ elements with stable refs, the same way browser-use does for the DOM.
 from __future__ import annotations
 
 import re
+import unicodedata
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
@@ -130,9 +131,30 @@ def _is_interesting(el: ET.Element) -> bool:
     return False
 
 
+# Invisible format chars a malicious app can use to smuggle prompt-injection
+# text into element labels/descriptions: zero-width spaces & joiners, bidi
+# overrides/isolates (what you see != what the model reads), soft hyphen,
+# BOM, tag/variation chars. The screen looks clean; the agent reads an order.
+_INVISIBLE_RE = re.compile(
+    "[\u00ad\u034f\u061c\u115f-\u1160\u17b4-\u17b5\u180e\u200b-\u200f"
+    "\u202a-\u202e\u2060-\u2064\u2066-\u206f\ufe00-\ufe0f\ufeff"
+    "\ufff9-\ufffb\U0001bca0-\U0001bca3\U0001d173-\U0001d17a"
+    "\U000e0000-\U000e0fff]"
+)
+# C0/C1 minus whitespace (\x09-\x0d are collapsed to a space by split())
+_C0C1_RE = re.compile(r"[\x00-\x08\x0e-\x1f\x7f-\x9f]")
+
+
+def _sanitize(text: str) -> str:
+    """Strip invisible/format and control chars, collapse whitespace."""
+    cleaned = _INVISIBLE_RE.sub("", text)
+    cleaned = _C0C1_RE.sub("", " ".join(cleaned.split()))
+    return unicodedata.normalize("NFC", cleaned)
+
+
 def _clean(text: str, cap: int = 200) -> str:
-    """Collapse whitespace (newlines break the table) and bound length."""
-    cleaned = " ".join(text.split())
+    """Sanitize + bound length (newlines break the table)."""
+    cleaned = _sanitize(text)
     return cleaned[:cap - 3] + "..." if len(cleaned) > cap else cleaned
 
 
@@ -156,8 +178,8 @@ def _build(el: ET.Element, depth: int, ref_counter: list[int],
         # label should not be its first child's text
         text, desc = _collect_label(el) if clickable else (
             el.get("text", "").strip(), el.get("content-desc", "").strip())
-        own_text = el.get("text", "").strip()
-        own_desc = el.get("content-desc", "").strip()
+        own_text = _sanitize(el.get("text", ""))
+        own_desc = _sanitize(el.get("content-desc", ""))
         is_password = _truthy(el.get("password"))
         if is_password:
             # never leak credentials into dumps / session.json / --json
@@ -170,8 +192,8 @@ def _build(el: ET.Element, depth: int, ref_counter: list[int],
         node = Element(
             ref=ref_counter[0],
             kind=classify(el.get("class", ""), clickable, editable, scrollable),
-            text=own_text or text,
-            desc=own_desc or desc,
+            text=_sanitize(own_text or text),
+            desc=_sanitize(own_desc or desc),
             label=label,
             resource_id=el.get("resource-id", ""),
             class_name=el.get("class", ""),
@@ -302,7 +324,7 @@ def find_elements(
     Lets agents query the UI tree ("the button that says 'Allow'")
     without parsing a full dump, which is the dominant workflow.
     """
-    needle = text.lower() if text else None
+    needle = _sanitize(text).lower() if text else None
 
     def matches_text(el: Element) -> bool:
         if needle is None:

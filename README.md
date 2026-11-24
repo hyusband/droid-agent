@@ -11,6 +11,7 @@
 [![PyPI](https://img.shields.io/pypi/v/droid-agent)](https://pypi.org/project/droid-agent/)
 [![Python](https://img.shields.io/pypi/pyversions/droid-agent)](https://pypi.org/project/droid-agent/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![hyusband/droid-agent MCP server](https://glama.ai/mcp/servers/hyusband/droid-agent/badges/score.svg)](https://glama.ai/mcp/servers/hyusband/droid-agent)
 
 ![demo](assets/demo.gif)
 
@@ -97,7 +98,8 @@ Allow button" in one call), `type_into` (tap field + type), `wait_for` /
 dump → act → verify loop.
 
 Also listed in the [official MCP Registry](https://registry.modelcontextprotocol.io/)
-as `io.github.hyusband/droid-agent`.
+as `io.github.hyusband/droid-agent`. Run `droid-agent mcp --safe` to hide the
+destructive tool subset — see [Security](#security).
 
 ## Commands
 
@@ -136,6 +138,34 @@ dump → read refs → tap/type → wait → dump → verify → repeat
 
 The dump warns when refs are >120s old (the UI may have moved). `tap` on a
 missing ref tells you to re-dump instead of tapping blind.
+
+## Security
+
+This is a remote-control tool: by design the tool surface gives an agent
+full hands on a live device (`shell`, `install`, `push_file`, UI gestures).
+Treat everything the device returns as **untrusted data** — a malicious
+app can write prompt-looking text into labels, logs, or the screen itself
+(indirect prompt injection).
+
+Built-in mitigations:
+
+- **Password masking** — `password="true"` fields are stripped from dumps
+  and never reach `session.json`
+- **Injection scrubbing** — invisible Unicode (zero-width, bidi overrides)
+  is stripped from labels/text/desc, so instructions hidden from the eye
+  can't reach the model
+- **Tool tiers** — `droid-agent mcp --safe` drops destructive tools;
+  `--readonly` registers observe-only tools; `--confirm` gates destructive
+  ops behind a one-time code printed to stderr
+  (env: `DROID_AGENT_SAFE`, `DROID_AGENT_READONLY`, `DROID_AGENT_CONFIRM`)
+
+Independent scans: [Glama](https://glama.ai/mcp/servers/hyusband/droid-agent) ·
+[m8ven](https://m8ven.ai/mcp/hyusband/droid-agent) ·
+[mcprush](https://mcprush.com/hyusband/droid-agent-mcp)
+
+Report vulnerabilities via
+[GitHub private reporting](https://github.com/hyusband/droid-agent/security) —
+see [SECURITY.md](SECURITY.md).
 
 ## FAQ
 
